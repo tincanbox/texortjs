@@ -1,0 +1,65 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" type="text/javascript"></script>
+    <script src="./script/texort.js" type="text/javascript"></script>
+
+    <style>
+      .cc {
+        display:flex;
+        align-items:center;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="cc">
+      <div>
+        <input id="query" style="display:block;width: 100%;font-size:2em;">
+        <ul id="list">
+        </ul>
+      </div>
+    </div>
+    <script type="text/javascript">
+      console.log("script");
+      
+      $(function(){
+        $(document).on('change', '#query', update);
+        var sur = [
+          ['iphone_x', 'iPhone X'],
+          ['iphone_5_se', 'iPhone 5 se'],
+          ['galaxy_note_edge', 'galaxy note edge', 'sc04j'],
+          ['xperia_x_performance', 'xperia x performance xp sc04j'],
+          ['xperia_xz_1', 'xperia xz-1'],
+          ['iphone_6_plus', 'iphone 6 plus']
+        ];
+        var tx = new Texort(sur, {
+          record: function(e){
+            var s = 0;
+            return {
+              text: e[0],
+              meta: e[0].split(" ").concat(e[1].split(" "))
+              .reduce(function(m,e){
+                return (m.indexOf(e) == -1 && m.push(e)) ?m:m;
+              }, [])
+            }
+          }
+        });
+        function update(e){
+          var el = $(e.target);
+          var term = el.val() || "";
+          var res = tx.sort(term).result;
+          update_list(res);
+        }
+        function update_list(res){
+          console.log('updating');
+          var list = $('#list');
+          list.empty();
+          res.map(function(o){
+            list.append("<li>" + o.text + " (" + o.score + ")</li>");
+          });
+        }
+      });
+    </script>
+  </body>
+</html>

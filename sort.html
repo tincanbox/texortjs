@@ -1,0 +1,157 @@
+
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" type="text/javascript"></script>
+<input id="query" style="font-size:2em;">
+<ul id="list">
+  
+</ul>
+<script>
+
+$('#query').change(update);
+
+var sur = [
+  ['iphone_x', 'iPhone X'],
+  ['galaxy_note_edge', 'galaxy note edge'],
+  ['xperia_x_performance', 'xperia x performance'],
+  ['iphone_6_plus', 'iphne 6 plus']
+];
+
+var data = sur.map(function(e){
+  return {
+    id: e[0] || "",
+    text: e[1] || "",
+    fragment: e[2] || "",
+    score: 0
+  };
+});
+
+function update(e){
+  var el = $(e.target);
+  var term = el.val() || "";
+  var res = sort_data(term);
+  
+  update_list(res);
+}
+
+function update_list(res){
+  var list = $('#list');
+  list.empty();
+  res.map(function(o){
+    list.append("<li>" + o.text + " (" + o.score + ")</li>");
+  });
+}
+
+function score_prematch(term, str){
+  var score = 0;
+  var chrs = term.split("");
+  for(var i = 0; i < chrs.length; i++){
+    var chr = chrs[i];
+    if(str.indexOf(chr) == i){
+      score += 1;
+    }else{
+      break;
+    }
+  }
+  return score;
+}
+
+function sort_data(ndl){
+  var term = ndl;
+  var term_lower = term.toLowerCase();
+  var opt = {};
+  
+  var result = score_all(term.trim(), data, opt);
+
+  result.map(function(e){
+    console.log(e);
+  });
+  
+  return result;
+}
+function array_concat_unique(dst){
+  var arg = Array.prototype.slice.call(arguments).slice(1);
+  console.log("arg", arg);
+  arg.map(function(src){
+    src.reduce(function(m, e){
+      if(e && m.indexOf(e) == -1){
+        m.push(e);
+      }
+      return m;
+    }, dst);
+  });
+  return dst;
+}
+
+
+function score_all(term, data, opt){
+  console.log("term", term);
+  
+  var config = Object.assign({}, {
+    score_threathhold: 3,
+    score_max: 9999,
+    score_rate: 1
+  }, opt || {});
+  
+  if(!term.length){
+    return data;
+  }
+  
+  var term_lower = term.toLowerCase();
+  var caseignore = (term == term_lower);
+  
+  return data.sort(function(a,b){
+    var scr = [];
+    [a,b].map(function(obj, i){
+      var score = 0;
+      var text_lower = obj.text.toLowerCase();
+      var id_lower = obj.id.toLowerCase();
+      console.log(term, obj.text);
+      if(text_lower == term_lower){
+        score += config.score_max;
+      }
+      if(id_lower == term_lower){
+        score += config.score_max;
+      }
+      
+      if(text_lower.indexOf(term_lower) == 0){
+        score += 50;
+      }
+      
+      score += (score_prematch(term_lower, text_lower) * 1);
+      
+      var frag = [];
+      frag = array_concat_unique(frag,
+        text_lower.split(" "),
+        obj.fragment.toLowerCase().split(" "),
+        id_lower.replace(/_/g, " ").split(" ")
+      );
+      
+      console.log("frag", frag);
+      
+      var term_frg =  array_concat_unique([], term_lower.split(" "));
+      term_frg.map(function(tf){
+        
+        (text_lower.indexOf(tf) == 0)
+          && (score += 1);
+          
+        score += (score_prematch(tf, text_lower) * .6);
+          
+        frag.map(function(f){
+          (f == tf) && (score += 20);
+          (f.indexOf(tf) > -1)
+            && (score += 1);
+          score += (score_prematch(tf, f) * .4);
+        });
+      });
+      
+      if(score < config.score_threathhold){
+        score = 0;
+      }
+
+      scr[i] = score;
+      obj.score = score;
+    });
+    return scr[1] - scr[0];
+  });
+}
+
+</script>
